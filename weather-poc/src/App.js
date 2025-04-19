@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TextField, Button, Card, CardContent, Typography, Container, Box, Grid } from '@mui/material';
 import './App.css';
+import ForecastChart from './ForecastChart';
 
 function WeatherApp({ fetchWeatherByCoords }) {
   const [city, setCity] = useState('');
@@ -9,6 +10,17 @@ function WeatherApp({ fetchWeatherByCoords }) {
   const [forecast, setForecast] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const groupForecastByDate = (forecastList) => {
+    const grouped = {};
+    forecastList.forEach((entry) => {
+      const date = entry.dt_txt.split(' ')[0];
+      if (!grouped[date] || entry.dt_txt.includes('12:00:00')) {
+        grouped[date] = entry;
+      }
+    });
+    return Object.values(grouped);
+  };
 
   const fetchWeather = async () => {
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY; // Replace with your OpenWeatherMap API key
@@ -20,7 +32,7 @@ function WeatherApp({ fetchWeatherByCoords }) {
       const weatherResponse = await axios.get(weatherUrl);
       const forecastResponse = await axios.get(forecastUrl);
       setWeather(weatherResponse.data);
-      setForecast(forecastResponse.data.list.slice(0, 5)); // Get the first 5 entries for simplicity
+      setForecast(groupForecastByDate(forecastResponse.data.list)); // Group forecast by date
       setError('');
     } catch (err) {
       setWeather(null);
@@ -102,6 +114,9 @@ function WeatherApp({ fetchWeatherByCoords }) {
                 </Grid>
               ))}
             </Grid>
+            <Box mt={4}>
+              <ForecastChart forecast={forecast} />
+            </Box>
           </Box>
         )}
       </Box>
